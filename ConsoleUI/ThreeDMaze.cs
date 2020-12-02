@@ -47,6 +47,10 @@ namespace ConsoleUI
             // game timing
             double speedFactor = (double) elapsedTime / TicksPerMillisecond / 200;
 
+            if (NativeKeyboard.IsKeyDown(KeyCode.Escape)) {
+                return false;
+            }
+
             // controls
             MovePlayer(speedFactor);
 

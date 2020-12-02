@@ -176,8 +176,7 @@ namespace ConsoleEngine
                 for (int x = 0; x < fieldWidth; x++) {
                     CharacterInfo currentChar = playingField[y * fieldWidth + x];
                     if (transparentChar == null || currentChar.Glyph != transparentChar) {
-                        _screenBuffer[(y + posY) * ScreenWidth + x + posX].Glyph = currentChar.Glyph;
-                        _screenBuffer[(y + posY) * ScreenWidth + x + posX].FgColor = currentChar.FgColor;
+                        Draw(currentChar.Glyph, x + posX, y + posY, currentChar.FgColor);
                     }
                 }
             }
