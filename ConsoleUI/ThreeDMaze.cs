@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using ConsoleEngine;
 using ConsoleEngine.Models;
 
@@ -6,8 +8,8 @@ namespace ConsoleUI
 {
     public class ThreeDMaze : ConsoleEngine.ConsoleEngine
     {
-        private double _playerX = 8;
-        private double _playerY = 8;
+        private double _playerX = 1;
+        private double _playerY = 1;
         private double _playerA = 0;
 
         private const int _mapHeight = 16;
@@ -21,20 +23,20 @@ namespace ConsoleUI
         protected override bool OnUserCreate()
         {
             _map += "################";
-            _map += "#..............#";
-            _map += "#..............#";
-            _map += "#..............#";
-            _map += "#.........#....#";
-            _map += "#.........#....#";
-            _map += "#..............#";
-            _map += "#..............#";
-            _map += "#..............#";
-            _map += "#..............#";
-            _map += "#..............#";
-            _map += "#..............#";
-            _map += "#.......########";
-            _map += "#..............#";
-            _map += "#..............#";
+            _map += "#........#.....#";
+            _map += "#..#..#..#..#..#";
+            _map += "#..#..#..#..#..#";
+            _map += "#..#..#..#..#..#";
+            _map += "#..#..#..#..#..#";
+            _map += "#..#..#..#..#..#";
+            _map += "#..#..#..#..#..#";
+            _map += "#..#..#.....#..#";
+            _map += "#..#..#######..#";
+            _map += "#..#...........#";
+            _map += "#..#...........#";
+            _map += "#..##########..#";
+            _map += "#..#.....#.....#";
+            _map += "#.....#.....#..#";
             _map += "################";
 
             return true;
@@ -51,7 +53,16 @@ namespace ConsoleUI
             // output
             DrawWalls();
 
-            DrawText((elapsedTime / (double) TicksPerMillisecond).ToString(), 5, 5, AnsiColor.Red);
+            DrawText($"X={_playerX:F}, Y={_playerY:F}, A={_playerA:F}", 0, 0, AnsiColor.Red);
+
+            // Display Map
+            for (int nx = 0; nx < _mapWidth; nx++) {
+                for (int ny = 0; ny < _mapWidth; ny++) {
+                    Draw(_map[ny * _mapWidth + nx], nx, ny + 1);
+                }
+            }
+
+            Draw((char) PixelType.Solid, (int) _playerX, (int) _playerY + 1, AnsiColor.Magenta);
 
             return true;
         }
@@ -64,6 +75,7 @@ namespace ConsoleUI
                 double rayAngle = _playerA - _FOV / 2 + x / (double) ScreenWidth * _FOV;
                 double distanceToWall = 0;
                 bool hitWall = false;
+                bool hitBoundary = false;
 
                 double eyeX = Math.Sin(rayAngle); // unit vector for ray in player space
                 double eyeY = Math.Cos(rayAngle);
@@ -81,7 +93,44 @@ namespace ConsoleUI
                     } else {
                         // Ray is inbounds so test to see if the ray cell is a wall block
                         if (_map[testY * _mapWidth + testX] == '#') {
+                            // Ray has hit wall
                             hitWall = true;
+
+                            // To highlight tile boundaries, cast a ray from each corner
+                            // of the tile, to the player. The more coincident this ray
+                            // is to the rendering ray, the closer we are to a tile
+                            // boundary, which we'll shade to add detail to the walls
+                            List<Tuple<double, double>> corners = new List<Tuple<double, double>>();
+
+                            // Test each corner of hit tile, storing the distance from
+                            // the player, and the calculated dot product of the two rays
+                            for (int tx = 0; tx < 2; tx++) {
+                                for (int ty = 0; ty < 2; ty++) {
+                                    // Angle of corner to eye
+                                    double vy = (double) testY + ty - _playerY;
+                                    double vx = (double) testX + tx - _playerX;
+                                    double d = Math.Sqrt(vx * vx + vy * vy);
+                                    double dot = (eyeX * vx / d) + (eyeY * vy / d);
+                                    corners.Add(new Tuple<double, double>(d, dot));
+                                }
+                            }
+
+                            // Sort Pairs from closest to farthest
+                            corners = corners.OrderBy(c => c.Item1).ToList();
+
+                            // First two/three are closest (we will never see all four)
+                            double fBound = 0.008;
+                            if (Math.Acos(corners[0].Item2) < fBound) {
+                                hitBoundary = true;
+                            }
+
+                            if (Math.Acos(corners[1].Item2) < fBound) {
+                                hitBoundary = true;
+                            }
+
+                            // if (Math.Acos(corners[2].Item2) < fBound) {
+                            //     hitBoundary = true;
+                            // }
                         }
                     }
                 }
@@ -91,11 +140,11 @@ namespace ConsoleUI
 
                 for (int y = 0; y < ScreenHeight; y++) {
                     if (y < ceiling) {
-                        DrawText(' ', x, y);
+                        Draw(' ', x, y);
                     } else if (y >= ceiling && y <= floor) {
-                        DrawText(GetWallShade(distanceToWall), x, y);
+                        Draw(GetWallShade(distanceToWall, hitBoundary), x, y);
                     } else {
-                        DrawText(GetFloorShade(y), x, y);
+                        Draw(GetFloorShade(y), x, y);
                     }
                 }
             }
@@ -120,7 +169,7 @@ namespace ConsoleUI
             return shade;
         }
 
-        private static char GetWallShade(double distanceToWall)
+        private static char GetWallShade(double distanceToWall, bool hitBoundary)
         {
             char shade;
 
@@ -134,6 +183,10 @@ namespace ConsoleUI
                 shade = (char) PixelType.Quarter;
             } else {
                 shade = ' ';
+            }
+
+            if (hitBoundary) {
+                shade = ' '; // Black it out
             }
 
             return shade;
@@ -165,6 +218,26 @@ namespace ConsoleUI
 
                 if (_map[(int) (_playerY - y) * _mapWidth + (int) (_playerX - x)] != '#') {
                     _playerX -= x;
+                    _playerY -= y;
+                }
+            }
+
+            if (NativeKeyboard.IsKeyDown(KeyCode.Q)) {
+                double x = Math.Cos(_playerA) * 2.0 * speedFactor;
+                double y = Math.Sin(_playerA) * 2.0 * speedFactor;
+
+                if (_map[(int) (_playerY + y) * _mapWidth + (int) (_playerX - x)] != '#') {
+                    _playerX -= x;
+                    _playerY += y;
+                }
+            }
+
+            if (NativeKeyboard.IsKeyDown(KeyCode.E)) {
+                double x = Math.Cos(_playerA) * 2.0 * speedFactor;
+                double y = Math.Sin(_playerA) * 2.0 * speedFactor;
+
+                if (_map[(int) (_playerY - y) * _mapWidth + (int) (_playerX + x)] != '#') {
+                    _playerX += x;
                     _playerY -= y;
                 }
             }

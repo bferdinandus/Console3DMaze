@@ -28,6 +28,7 @@ namespace ConsoleEngine
         private CharacterInfo[] _screenBuffer;
         protected int ScreenWidth { get; private set; }
         protected int ScreenHeight { get; private set; }
+        protected string WindowTitle { get; private set; }
 
         private bool _loopActive;
 
@@ -42,10 +43,11 @@ namespace ConsoleEngine
         protected abstract bool OnUserCreate();
         protected abstract bool OnUserUpdate(long elapsedTime);
 
-        public bool SetupConsole(int width, int height)
+        public bool SetupConsole(string windowTitle, int width, int height)
         {
             ScreenWidth = width;
             ScreenHeight = height;
+            WindowTitle = windowTitle;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 IntPtr iStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -106,7 +108,7 @@ namespace ConsoleEngine
 
                 // update title
                 float elapsedSeconds = (float) elapsedTime / TicksPerSecond;
-                Console.Title = $"-=[ Tetris ]=- Framerate: {(int) (1 / elapsedSeconds)} Date: {DateTime.Now}";
+                Console.Title = $"-=[ {WindowTitle} ]=- Framerate: {(int) (1 / elapsedSeconds)} Date: {DateTime.Now}";
                 DrawScreen();
             }
         }
@@ -154,16 +156,10 @@ namespace ConsoleEngine
 
         private string ColorString(AnsiColor? color) => color == null ? string.Empty : $"\u001b[{(int) color}m";
 
-        private void Draw(char glyph, int x, int y, AnsiColor? color)
+        protected void Draw(char glyph, int x, int y, AnsiColor? color = null)
         {
             _screenBuffer[y * ScreenWidth + x].Glyph = glyph;
             _screenBuffer[y * ScreenWidth + x].FgColor = color;
-        }
-
-
-        protected void DrawText(char text, int x, int y, AnsiColor? color = null)
-        {
-            Draw(text, x, y, color);
         }
 
         protected void DrawText(string text, int x, int y, AnsiColor? color = null)

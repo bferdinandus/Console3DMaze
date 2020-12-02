@@ -9,31 +9,39 @@
     /// </remarks>
     internal enum KeyCode
     {
-        /// <summary>
-        /// The left arrow key.
-        /// </summary>
+        Escape = 0x1B,
+
         Left = 0x25,
-
-        /// <summary>
-        /// The up arrow key.
-        /// </summary>
         Up,
-
-        /// <summary>
-        /// The right arrow key.
-        /// </summary>
         Right,
-
-        /// <summary>
-        /// The down arrow key.
-        /// </summary>
         Down,
 
         A = 0x41,
-        D = 0x44,
-        S = 0x53,
-        W = 0x57,
-        Z = 0x5A
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+        O,
+        P,
+        Q,
+        R,
+        S,
+        T,
+        U,
+        V,
+        W,
+        X,
+        Y,
+        Z
     }
 
     /// <summary>

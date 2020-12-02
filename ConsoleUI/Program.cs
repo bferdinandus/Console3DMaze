@@ -11,7 +11,7 @@ namespace ConsoleUI
         static void Main(string[] args)
         {
             var instance =new ThreeDMaze();
-            instance.SetupConsole(128, 40);
+            instance.SetupConsole("Three Dee Maze", 200, 60);
             instance.Start();
 
 
