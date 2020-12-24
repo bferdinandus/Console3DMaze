@@ -1,0 +1,3 @@
+[submodule "ConsoleEngine"]
+	path = ConsoleEngine
+	url = git@github.com:bferdinandus/ConsoleEngine.git
